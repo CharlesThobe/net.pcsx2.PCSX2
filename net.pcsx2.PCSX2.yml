@@ -13,11 +13,10 @@ finish-args:
   - --filesystem=host:ro
 modules:
   - name: pcsx2_patches
-    build-system: simple
+    buildsystem: simple
     build-commands:
-      - 7z a -r cheats_ni.zip cheats_ni/*
-      - 7z a -r cheats_ws.zip cheats_ws/*
-    post-install:
+      - cd cheats_ni/ && zip -r ../cheats_ni.zip *
+      - cd cheats_ws/ && zip -r ../cheats_ws.zip *
       - install -Dm644 cheats_ni.zip ${FLATPAK_DEST}/bin/resources/cheats_ni.zip
       - install -Dm644 cheats_ws.zip ${FLATPAK_DEST}/bin/resources/cheats_ws.zip
     sources:
