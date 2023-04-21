@@ -98,3 +98,17 @@ modules:
           tag-pattern: ^v([\d.]+)$
       - type: file
         path: net.pcsx2.PCSX2.metainfo.xml
+  - name: pcsx2_patches
+    post-install:
+      - 7z a -r cheats_ni.zip cheats_ni/*
+      - 7z a -r cheats_ws.zip cheats_ws/*
+      - install -Dm644 cheats_ni.zip ${FLATPAK_DEST}/bin/resources/cheats_ni.zip
+      - install -Dm644 cheats_ws.zip ${FLATPAK_DEST}/bin/resources/cheats_ws.zip
+    sources:
+      - type: git
+        url: https://github.com/PCSX2/pcsx2_patches.git
+        tag: latest
+        commit: 1d3f78fae1bc38f74f146105801d50ff09601c51
+        x-checker-data:
+          type: git
+          tag-pattern: (latest)
