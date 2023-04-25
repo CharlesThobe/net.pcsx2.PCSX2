@@ -1,0 +1,164 @@
+app-id: net.pcsx2.PCSX2
+runtime: org.kde.Platform
+sdk: org.kde.Sdk
+runtime-version: '6.4'
+command: rails
+finish-args:
+  - --device=all
+  - --share=network
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --filesystem=host:ro
+modules:
+#  - name: libaio
+#    no-autogen: true
+#    make-install-args:
+#      - prefix="${FLATPAK_DEST}"
+#    sources:
+#      - type: git
+#        url: https://pagure.io/libaio.git
+#        tag: libaio-0.3.113
+#        commit: 1b18bfafc6a2f7b9fa2c6be77a95afed8b7be448
+#        x-checker-data:
+#          type: git
+#          tag-pattern: ^libaio-([\d.]+)$
+#    cleanup:
+#      - /include
+#      - /lib/*.a
+#  - name: soundtouch
+#    buildsystem: cmake-ninja
+#    sources:
+#      - type: git
+#        url: https://codeberg.org/soundtouch/soundtouch.git
+#        tag: 2.3.2
+#        commit: 29fba832a7920a04eab956b3990c50e13d8c93f9
+#        x-checker-data:
+#          type: git
+#          tag-pattern: ^([\d.]+)$
+#    cleanup:
+#      - /bin
+#      - /include
+#      - /lib/cmake
+#      - /lib/pkgconfig
+#      - /share/doc
+#      - /lib/*.a
+#  - name: png++
+#    disabled: true
+#    buildsystem: autotools
+#    make-install-args:
+#      - prefix="${FLATPAK_DEST}"
+#    sources:
+#      - type: archive
+#        url: https://download.savannah.nongnu.org/releases/pngpp/png++-0.2.10.tar.gz
+#        sha256: 998af216ab16ebb88543fbaa2dbb9175855e944775b66f2996fc945c8444eee1
+#  - name: libpcap
+#    buildsystem: cmake-ninja
+#    sources:
+#      - type: git
+#        url: https://github.com/the-tcpdump-group/libpcap.git
+#        tag: libpcap-1.10.4
+#        commit: 104271ba4a14de6743e43bcf87536786d8fddea4
+#        x-checker-data:
+#          type: git
+#          tag-pattern: ^libpcap-([\d.]+)$
+#    cleanup:
+#      - /bin
+#      - /include
+#      - /share/man
+#      - /lib/pkgconfig
+#      - /lib/*.a
+  - name: clang
+    build-options:
+      strip: false
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/clang
+      # Note that "--strip-components=1" has nothing to do with binary stripping.
+      - tar xf * --strip-components=1 -C /app/clang
+      - bash -c 'export test=success && cat > /app/clang-toolchain.cmake << EOF
+
+        set(CMAKE_C_COMPILER "/app/clang/bin/clang")
+
+        set(CMAKE_CXX_COMPILER "/app/clang/bin/clang++")
+
+        set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=/app/clang/bin/ld.lld")
+
+        set(CMAKE_MODULE_LINKER_FLAGS_INIT "-fuse-ld=/app/clang/bin/ld.lld")
+
+        set(CMAKE_SHARED_LINKER_FLAGS_INIT "-fuse-ld=/app/clang/bin/ld.lld")
+
+        EOF'
+#      - realpath "${FLATPAK_DEST}/clang-toolchain.cmake" >> "${FLATPAK_DEST}/clang-toolchain.cmake"
+#      - realpath ./backlight
+#      - ls /run/build/clang
+#      - cp -t /app/ *
+    sources:
+#      - type: file
+#        path: /storage/backlight
+#        sha256: 360f512906768986ce0697b14ec4e3231ba0e64df0f2ddbe61ea6b496d84bd5c
+      - type: file
+        url: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.2/clang+llvm-16.0.2-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+        sha256: 9530eccdffedb9761f23cbd915cf95d861b1d95f340ea36ded68bd6312af912e
+  - name: enr
+    buildsystem: cmake
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_TOOLCHAIN_FILE=/app/clang-toolchain.cmake
+    post-install:
+      - ls /app
+    sources:
+      - type: git
+        path: /home/shen/devel/egyrail
+        commit: bad978e85359936de1a02b328adf5cc9965b190a
+#  - name: pcsx2
+#    buildsystem: cmake-ninja
+#    builddir: true
+#    config-opts:
+#      - -DCMAKE_BUILD_TYPE=Release
+#      - -DDISABLE_BUILD_DATE=ON
+#      - -DDISABLE_ADVANCE_SIMD=ON
+#      - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
+#      - -DCMAKE_C_COMPILER "${FLATPAK_DEST}"/clang/bin/clang-12
+#      - -DCMAKE_CXX_COMPILER "${FLATPAK_DEST}"/clang/bin/clang++-12
+#      - -DCMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld="${FLATPAK_DEST}"/clang/bin/ld.lld"
+#      - -DCMAKE_MODULE_LINKER_FLAGS_INIT "-fuse-ld="${FLATPAK_DEST}"/clang/bin/ld.lld"
+#      - -DCMAKE_SHARED_LINKER_FLAGS_INIT "-fuse-ld="${FLATPAK_DEST}"/clang/bin/ld.lld"
+#    cleanup:
+#      - /share/pixmaps
+#      - /share/man
+#      - /share/doc
+#    post-install:
+#      - cp -r bin/pcsx2-qt ../bin/* "${FLATPAK_DEST}"/bin
+#      - rm "${FLATPAK_DEST}"/bin/portable.ini
+#      - install -Dm644 ../bin/resources/icons/AppIconLarge.png "${FLATPAK_DEST}"/share/icons/hicolor/256x256/apps/net.pcsx2.PCSX2.png
+#      - install -Dm644 ../net.pcsx2.PCSX2.metainfo.xml "${FLATPAK_DEST}"/share/metainfo/net.pcsx2.PCSX2.metainfo.xml
+#      - install -Dm644 ../.github/workflows/scripts/linux/pcsx2-qt.desktop "${FLATPAK_DEST}"/share/applications/net.pcsx2.PCSX2.desktop
+#      - desktop-file-edit --set-key=Icon --set-value=net.pcsx2.PCSX2 "${FLATPAK_DEST}"/share/applications/net.pcsx2.PCSX2.desktop
+#    sources:
+#      - type: git
+#        url: https://github.com/PCSX2/pcsx2.git
+#        tag: v1.7.4408
+#        commit: dc93e861c7f827fde1abaaaff51b55550a232a69
+#        x-checker-data:
+#          type: git
+#          tag-pattern: ^v([\d.]+)$
+#      - type: file
+#        path: net.pcsx2.PCSX2.metainfo.xml
+#  - name: pcsx2_patches
+#    buildsystem: simple
+#    build-commands:
+#      - cd cheats_ni/ && zip -r ../cheats_ni.zip *
+#      - cd cheats_ws/ && zip -r ../cheats_ws.zip *
+#      - install -Dm644 cheats_ni.zip "${FLATPAK_DEST}"/bin/resources/cheats_ni.zip
+#      - install -Dm644 cheats_ws.zip "${FLATPAK_DEST}"/bin/resources/cheats_ws.zip
+#    sources:
+#      - type: git
+#        url: https://github.com/PCSX2/pcsx2_patches.git
+#        tag: latest
+#        commit: 56c088374ad398daff702a2078ce046fc5ec6787
+#        x-checker-data:
+#          type: git
+#          tag-pattern: (latest)
