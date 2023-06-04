@@ -70,25 +70,58 @@ modules:
       - /share/man
       - /lib/pkgconfig
       - /lib/*.a
+  - name: clang
+    buildsystem: simple
+    build-commands:
+      - true
+    post-install:
+      - mkdir -p "${FLATPAK_DEST}"/clang
+      - tar xf * --strip-components=1 -C "${FLATPAK_DEST}"/clang
+      - chmod -R +w "${FLATPAK_DEST}"/clang
+      - bash -c 'export test=success && cat > "${FLATPAK_DEST}"/clang/clang-toolchain.cmake << EOF
+
+        set(CMAKE_C_COMPILER "${FLATPAK_DEST}/clang/bin/clang")
+
+        set(CMAKE_CXX_COMPILER "${FLATPAK_DEST}/clang/bin/clang++")
+
+        set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=${FLATPAK_DEST}/clang/bin/ld.lld")
+
+        set(CMAKE_MODULE_LINKER_FLAGS_INIT "-fuse-ld=${FLATPAK_DEST}/clang/bin/ld.lld")
+
+        set(CMAKE_SHARED_LINKER_FLAGS_INIT "-fuse-ld=${FLATPAK_DEST}/clang/bin/ld.lld")
+
+        EOF'
+    sources:
+      - type: file
+        url: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.4/clang+llvm-16.0.4-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+        sha256: fd464333bd55b482eb7385f2f4e18248eb43129a3cda4c0920ad9ac3c12bdacf
   - name: pcsx2
     buildsystem: cmake-ninja
     builddir: true
     config-opts:
-      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
-      - -DDISABLE_BUILD_DATE=ON
-      - -DDISABLE_ADVANCE_SIMD=ON
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DQT_BUILD=ON
+      - -DCUBEB_API=ON
+      - -DX11_API=ON
+      - -DWAYLAND_API=ON
+      - -DENABLE_SETCAP=OFF
+      - -DUSE_SYSTEM_SDL2=ON
+      - -DUSE_SYSTEM_ZSTD=OFF
+      - -DDISABLE_ADVANCE_SIMD=TRUE
       - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
+      - -DCMAKE_TOOLCHAIN_FILE=/app/clang/clang-toolchain.cmake
     cleanup:
       - /share/pixmaps
       - /share/man
       - /share/doc
     post-install:
-      - cp -r bin/pcsx2-qt ../bin/* ${FLATPAK_DEST}/bin
-      - rm ${FLATPAK_DEST}/bin/portable.ini
-      - install -Dm644 ../bin/resources/icons/AppIconLarge.png ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/net.pcsx2.PCSX2.png
-      - install -Dm644 ../net.pcsx2.PCSX2.metainfo.xml ${FLATPAK_DEST}/share/metainfo/net.pcsx2.PCSX2.metainfo.xml
-      - install -Dm644 ../.github/workflows/scripts/linux/pcsx2-qt.desktop ${FLATPAK_DEST}/share/applications/net.pcsx2.PCSX2.desktop
-      - desktop-file-edit --set-key=Icon --set-value=net.pcsx2.PCSX2 ${FLATPAK_DEST}/share/applications/net.pcsx2.PCSX2.desktop
+      - cp -r bin/pcsx2-qt ../bin/* "${FLATPAK_DEST}"/bin
+      - rm "${FLATPAK_DEST}"/bin/portable.ini
+      - install -Dm644 ../bin/resources/icons/AppIconLarge.png "${FLATPAK_DEST}"/share/icons/hicolor/256x256/apps/net.pcsx2.PCSX2.png
+      - install -Dm644 ../net.pcsx2.PCSX2.metainfo.xml "${FLATPAK_DEST}"/share/metainfo/net.pcsx2.PCSX2.metainfo.xml
+      - install -Dm644 ../.github/workflows/scripts/linux/pcsx2-qt.desktop "${FLATPAK_DEST}"/share/applications/net.pcsx2.PCSX2.desktop
+      - desktop-file-edit --set-key=Icon --set-value=net.pcsx2.PCSX2 "${FLATPAK_DEST}"/share/applications/net.pcsx2.PCSX2.desktop
+      - rm -rf "${FLATPAK_DEST}"/clang
     sources:
       - type: git
         url: https://github.com/PCSX2/pcsx2.git
